@@ -128,4 +128,5 @@ The current test suite contains **16 tests**, all of which pass successfully.
 
 ## Author
 
-Built as part of the Kood Software Development program.
+
+Built as part of the Kood Software Development program by Christine Nyambura
