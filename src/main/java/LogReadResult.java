@@ -1,0 +1,24 @@
+
+import java.util.List;
+
+public class LogReadResult {
+
+    private final List<LogEntry> entries;
+    private final List<MalformedLine> malformedLines;
+
+    public LogReadResult(
+            List<LogEntry> entries,
+            List<MalformedLine> malformedLines) {
+
+        this.entries = entries;
+        this.malformedLines = malformedLines;
+    }
+
+    public List<LogEntry> getEntries() {
+        return entries;
+    }
+
+    public List<MalformedLine> getMalformedLines() {
+        return malformedLines;
+    }
+}
