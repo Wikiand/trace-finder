@@ -16,13 +16,40 @@ public class ReportWriter {
             Rulebook rulebook,
             java.util.List<MalformedLine> malformedLines) throws IOException {
 
+        write(
+                outputPath,
+                result,
+                rulebook,
+                malformedLines,
+                null,
+                null
+        );
+    }
+
+    public void write(
+            Path outputPath,
+            AnalysisResult result,
+            Rulebook rulebook,
+            java.util.List<MalformedLine> malformedLines,
+            LocalDateTime start,
+            LocalDateTime end) throws IOException {
+
         StringBuilder report = new StringBuilder();
 
         report.append("=== Log Analysis Report ===\n");
         report.append("Generated: ")
                 .append(LocalDateTime.now().format(TIMESTAMP_FORMAT))
                 .append("\n");
-        report.append("Time Window: full file\n");
+
+        if (start == null || end == null) {
+            report.append("Time Window: full file\n");
+        } else {
+            report.append("Time Window: ")
+                    .append(start.format(TIMESTAMP_FORMAT))
+                    .append(" to ")
+                    .append(end.format(TIMESTAMP_FORMAT))
+                    .append("\n");
+        }
 
         // Activity Summary
         report.append("\nActivity Summary\n");

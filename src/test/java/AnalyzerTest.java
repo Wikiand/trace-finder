@@ -232,4 +232,33 @@ public class AnalyzerTest {
         assertEquals(2, filtered.get(1).getLineNumber());
     }
 
+    @Test
+    void equalTimeWindowContainsNoEntries() {
+        Rulebook rulebook = new Rulebook();
+        rulebook.addRule("INFO", 1);
+
+        LogEntry entry = new LogEntry(
+                1,
+                "2024-03-15 02:00:00 | INFO | 192.168.1.10 | /home | view",
+                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
+                "INFO",
+                "192.168.1.10",
+                "/home",
+                "view"
+        );
+
+        Analyzer analyzer = new Analyzer();
+
+        AnalysisResult result = analyzer.analyze(
+                Arrays.asList(entry),
+                rulebook,
+                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
+                LocalDateTime.of(2024, 3, 15, 2, 0, 0)
+        );
+
+        assertEquals(0, result.getActivitySummary().getOrDefault("INFO", 0));
+        assertTrue(result.getFlaggedEntries().isEmpty());
+        assertTrue(result.getSuspiciousIps().isEmpty());
+        assertTrue(result.getUnknownPatterns().isEmpty());
+    }
 }

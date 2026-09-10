@@ -3,7 +3,6 @@ import java.nio.file.Path;
 public class Main {
 
     public static void main(String[] args) {
-
         int exitCode = run(args);
 
         if (exitCode != 0) {
@@ -51,6 +50,7 @@ public class Main {
                     return 1;
                 }
             }
+
             RulebookReader rulebookReader = new RulebookReader();
             Rulebook rulebook = rulebookReader.read(rulebookPath);
 
@@ -80,7 +80,9 @@ public class Main {
                     reportPath,
                     analysisResult,
                     rulebook,
-                    logResult.getMalformedLines()
+                    logResult.getMalformedLines(),
+                    start,
+                    end
             );
 
             return 0;

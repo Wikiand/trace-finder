@@ -99,4 +99,35 @@ public class ReportWriterTest {
 
         Files.deleteIfExists(output);
     }
+
+    @Test
+    void reportContainsSelectedTimeWindow() throws Exception {
+        Rulebook rulebook = new Rulebook();
+
+        AnalysisResult result = new Analyzer().analyze(
+                Arrays.asList(),
+                rulebook
+        );
+
+        Path output = Files.createTempFile("report", ".txt");
+
+        ReportWriter writer = new ReportWriter();
+
+        writer.write(
+                output,
+                result,
+                rulebook,
+                Arrays.asList(),
+                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
+                LocalDateTime.of(2024, 3, 15, 3, 30, 0)
+        );
+
+        String report = Files.readString(output);
+
+        assertTrue(report.contains(
+                "Time Window: 2024-03-15 02:00:00 to 2024-03-15 03:30:00"
+        ));
+
+        Files.deleteIfExists(output);
+    }
 }
