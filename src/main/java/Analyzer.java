@@ -7,6 +7,29 @@ import java.util.Map;
 
 public class Analyzer {
 
+    List<LogEntry> filterByTimeWindow(
+            List<LogEntry> entries,
+            java.time.LocalDateTime start,
+            java.time.LocalDateTime end) {
+
+        return entries.stream()
+                .filter(entry -> !entry.getTimestamp().isBefore(start))
+                .filter(entry -> entry.getTimestamp().isBefore(end))
+                .toList();
+    }
+
+    public AnalysisResult analyze(
+            List<LogEntry> entries,
+            Rulebook rulebook,
+            java.time.LocalDateTime start,
+            java.time.LocalDateTime end) {
+
+        List<LogEntry> filteredEntries =
+                filterByTimeWindow(entries, start, end);
+
+        return analyze(filteredEntries, rulebook);
+    }
+
     public AnalysisResult analyze(List<LogEntry> entries, Rulebook rulebook) {
 
         Map<String, Integer> activitySummary = new HashMap<>();

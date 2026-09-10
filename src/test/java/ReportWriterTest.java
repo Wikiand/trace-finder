@@ -70,4 +70,33 @@ public class ReportWriterTest {
 
         Files.deleteIfExists(output);
     }
+
+    @Test
+    void reportContainsFullFileTimeWindow() throws Exception {
+        Rulebook rulebook = new Rulebook();
+
+        AnalysisResult result = new Analyzer().analyze(
+                Arrays.asList(),
+                rulebook
+        );
+
+        Path output = Files.createTempFile("report", ".txt");
+
+        ReportWriter writer = new ReportWriter();
+
+        writer.write(
+                output,
+                result,
+                rulebook,
+                Arrays.asList()
+        );
+
+        String report = Files.readString(output);
+
+        assertTrue(report.contains("=== Log Analysis Report ==="));
+        assertTrue(report.contains("Generated: "));
+        assertTrue(report.contains("Time Window: full file"));
+
+        Files.deleteIfExists(output);
+    }
 }

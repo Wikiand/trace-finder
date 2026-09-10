@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -182,4 +183,53 @@ public class AnalyzerTest {
                 result.getSuspiciousIps().get("192.168.1.10")
         );
     }
+
+    @Test
+    void timeWindowIncludesStartAndExcludesEnd() {
+        Rulebook rulebook = new Rulebook();
+        rulebook.addRule("INFO", 1);
+
+        LogEntry atStart = new LogEntry(
+                1,
+                "2024-03-15 02:00:00 | INFO | 192.168.1.10 | /home | view",
+                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
+                "INFO",
+                "192.168.1.10",
+                "/home",
+                "view"
+        );
+
+        LogEntry inside = new LogEntry(
+                2,
+                "2024-03-15 02:30:00 | INFO | 192.168.1.20 | /home | view",
+                LocalDateTime.of(2024, 3, 15, 2, 30, 0),
+                "INFO",
+                "192.168.1.20",
+                "/home",
+                "view"
+        );
+
+        LogEntry atEnd = new LogEntry(
+                3,
+                "2024-03-15 03:00:00 | INFO | 192.168.1.30 | /home | view",
+                LocalDateTime.of(2024, 3, 15, 3, 0, 0),
+                "INFO",
+                "192.168.1.30",
+                "/home",
+                "view"
+        );
+
+        Analyzer analyzer = new Analyzer();
+
+        List<LogEntry> filtered = analyzer.filterByTimeWindow(
+                Arrays.asList(atStart, inside, atEnd),
+                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
+                LocalDateTime.of(2024, 3, 15, 3, 0, 0)
+        );
+
+        assertEquals(2, filtered.size());
+        assertEquals(1, filtered.get(0).getLineNumber());
+        assertEquals(2, filtered.get(1).getLineNumber());
+    }
+
 }

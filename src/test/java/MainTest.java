@@ -19,4 +19,35 @@ public class MainTest {
 
         assertEquals(1, exitCode);
     }
+
+    @Test
+    void mainRejectsUnreadableTimestamp() {
+        int exitCode = Main.run(
+                new String[]{
+                        "logs.txt",
+                        "rules.csv",
+                        "report.txt",
+                        "not-a-timestamp",
+                        "2024-03-15 03:00:00"
+                }
+        );
+
+        assertEquals(1, exitCode);
+    }
+
+    @Test
+    void mainRejectsReversedTimeWindow() {
+        int exitCode = Main.run(
+                new String[]{
+                        "logs.txt",
+                        "rules.csv",
+                        "report.txt",
+                        "2024-03-15 04:00:00",
+                        "2024-03-15 03:00:00"
+                }
+        );
+
+        assertEquals(1, exitCode);
+    }
+
 }

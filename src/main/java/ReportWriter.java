@@ -1,9 +1,14 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 public class ReportWriter {
+
+    private static final DateTimeFormatter TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public void write(
             Path outputPath,
@@ -13,8 +18,14 @@ public class ReportWriter {
 
         StringBuilder report = new StringBuilder();
 
+        report.append("=== Log Analysis Report ===\n");
+        report.append("Generated: ")
+                .append(LocalDateTime.now().format(TIMESTAMP_FORMAT))
+                .append("\n");
+        report.append("Time Window: full file\n");
+
         // Activity Summary
-        report.append("Activity Summary\n");
+        report.append("\nActivity Summary\n");
         report.append("================\n");
 
         for (Map.Entry<String, Integer> rule :
