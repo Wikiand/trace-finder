@@ -98,7 +98,7 @@ java -cp target/classes Main logs.txt rules.csv report.txt
 mvn test
 ```
 
-The current test suite contains **16 tests**, all of which pass successfully.
+The current test suite contains **22 tests**, all of which pass successfully.
 
 ## Screenshots
 
@@ -130,3 +130,48 @@ The current test suite contains **16 tests**, all of which pass successfully.
 
 
 Built as part of the Kood Software Development program by Christine Nyambura
+
+
+## Time Window Filtering
+
+TraceFinder supports analysis of a selected time window using two additional arguments: `start timestamp` and `end timestamp`.
+
+Timestamps must use the format `yyyy-MM-dd HH:mm:ss`.
+
+Example:
+
+```bash
+java -cp target/classes Main test-data/logs.txt test-data/rules.csv report.txt "2024-03-15 02:00:00" "2024-03-15 03:30:00"
+```
+
+The window uses the `[start, end)` boundary rule: the start is inclusive and the end is exclusive. Equal start and end timestamps are valid and produce an empty analysis. A reversed window or unreadable timestamp is rejected with a nonzero exit code.
+
+Malformed lines are still reported regardless of the selected window, and unknown-pattern line numbers remain unchanged.
+
+Without the two timestamp arguments, the full file is analyzed.
+
+## Coverage
+
+Generate the JaCoCo coverage report with:
+
+```bash
+mvn test jacoco:report
+```
+
+The HTML report is generated at `target/site/jacoco/index.html`.
+
+The current coverage report showed 84% instructions, 75% branches, 98% methods, 92% classes, and 84% lines.
+
+Coverage shows which code was executed by tests; the boundary tests specifically verify the time-window behavior.
+
+## Time Window Edge Cases Tested
+
+- Start timestamp is included.
+- End timestamp is excluded.
+- Equal start and end timestamps produce an empty analysis.
+- Reversed timestamps are rejected.
+- Unreadable timestamps are rejected.
+- Malformed lines remain in the report.
+- Unknown pattern line numbers are preserved.
+- Whole-file analysis continues to work without a time window.
+
