@@ -48,7 +48,8 @@ public class Parser {
         } catch (DateTimeParseException e) {
             throw new MalformedLineException(
                     lineNumber,
-                    line
+                    line,
+                    e
             );
         }
     }

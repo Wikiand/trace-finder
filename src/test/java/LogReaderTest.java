@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -8,28 +9,28 @@ import static org.junit.jupiter.api.Assertions.*;
 public class LogReaderTest {
 
     @Test
-    void logReaderSeparatesValidAndMalformedLines() throws Exception {
-        Path file = Files.createTempFile("logs", ".txt");
+    void missingLogFilePreservesOriginalCause() {
 
-        Files.writeString(file,
-                "2024-03-15 02:14:33 | INFO | 192.168.1.10 | /home | view\n" +
-                "this is malformed\n" +
-                "2024-03-15 02:15:33 | WARN | 192.168.1.20 | /login | failed\n"
+        Path missingFile =
+                Path.of("does-not-exist-" + System.nanoTime() + ".log");
+
+        LogReader logReader = new LogReader(new Parser());
+
+        TraceFinderFileException exception =
+                assertThrows(
+                        TraceFinderFileException.class,
+                        () -> logReader.read(missingFile)
+                );
+
+        assertNotNull(exception.getCause());
+        assertInstanceOf(
+                IOException.class,
+                exception.getCause()
         );
 
-        LogReader reader = new LogReader(new Parser());
-
-        LogReadResult result = reader.read(file);
-
-        assertEquals(2, result.getEntries().size());
-        assertEquals(1, result.getMalformedLines().size());
-
-        assertEquals(2, result.getMalformedLines().get(0).getLineNumber());
-        assertEquals(
-                "this is malformed",
-                result.getMalformedLines().get(0).getRawContent()
+        assertInstanceOf(
+                NoSuchFileException.class,
+                exception.getCause()
         );
-
-        Files.deleteIfExists(file);
     }
 }

@@ -9,6 +9,20 @@ public class MalformedLineException extends Exception {
         this.rawContent = rawContent;
     }
 
+    public MalformedLineException(
+            int lineNumber,
+            String rawContent,
+            Throwable cause) {
+
+        super(
+                "Malformed log line at line " + lineNumber,
+                cause
+        );
+
+        this.lineNumber = lineNumber;
+        this.rawContent = rawContent;
+    }
+
     public int getLineNumber() {
         return lineNumber;
     }

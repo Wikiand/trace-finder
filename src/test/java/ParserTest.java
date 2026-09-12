@@ -1,11 +1,15 @@
 import org.junit.jupiter.api.Test;
 
+import java.time.format.DateTimeParseException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ParserTest {
 
     @Test
-    void validLineIsParsedIntoLogEntry() throws MalformedLineException {
+    void validLineIsParsedIntoLogEntry()
+            throws MalformedLineException {
+
         Parser parser = new Parser();
 
         String line =
@@ -26,6 +30,7 @@ public class ParserTest {
 
     @Test
     void malformedLineThrowsExceptionWithLineNumberAndContent() {
+
         Parser parser = new Parser();
 
         String line =
@@ -43,6 +48,7 @@ public class ParserTest {
 
     @Test
     void emptyLineThrowsExceptionWithLineNumberAndContent() {
+
         Parser parser = new Parser();
 
         String line = "";
@@ -58,7 +64,8 @@ public class ParserTest {
     }
 
     @Test
-    void invalidTimestampThrowsExceptionWithLineNumberAndContent() {
+    void invalidTimestampPreservesOriginalCause() {
+
         Parser parser = new Parser();
 
         String line =
@@ -72,5 +79,12 @@ public class ParserTest {
 
         assertEquals(7, exception.getLineNumber());
         assertEquals(line, exception.getRawContent());
+
+        assertNotNull(exception.getCause());
+
+        assertInstanceOf(
+                DateTimeParseException.class,
+                exception.getCause()
+        );
     }
 }
