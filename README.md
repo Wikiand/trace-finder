@@ -230,3 +230,18 @@ The test suite verifies:
 - Unrecoverable failures being represented by their specific exception types.
 
 The existing analysis and time-window tests remain part of the test suite so that the exception-handling refactor does not weaken previous behaviour.
+
+### Exception Handling Demonstrations
+
+#### 1. Recoverable failure — malformed log lines
+
+![Malformed lines recorded in report](screenshots/02-malformed-lines.png)
+
+#### 2. Deep file failure
+
+![Deep file failure names source file](screenshots/03-deep-file-failure.png)
+
+#### 3. Test suite passing
+
+![27 tests passing](screenshots/04-tests-passing.png)
+
