@@ -175,3 +175,58 @@ Coverage shows which code was executed by tests; the boundary tests specifically
 - Unknown pattern line numbers are preserved.
 - Whole-file analysis continues to work without a time window.
 
+
+## Exception Handling
+
+TraceFinder uses specific custom exceptions for failures that need to be distinguished by the code handling them. Exceptions are not distinguished by their message text.
+
+The main exception types are:
+
+- **`TraceFinderArgumentException`** — invalid command-line arguments or timestamps.
+- **`TraceFinderFileException`** — file-related failures such as an unreadable log file, unreadable rulebook file, or unwritable report path.
+- **`RulebookException`** — a rulebook that cannot be parsed according to the expected CSV structure.
+- **`MalformedLineException`** — a log line that cannot be parsed. The exception carries both the original line number and the original log content.
+
+### Recoverable and Unrecoverable Failures
+
+Malformed log lines are **recoverable**. When the parser encounters one, `MalformedLineException` is caught by `LogReader`. The malformed line is recorded with its line number and original content, and processing continues with the remaining log entries. The malformed lines are included in the final report.
+
+Failures involving command-line arguments, required input files, rulebook parsing, or the output report are **unrecoverable**. They stop the analysis and propagate to `Main`, where the appropriate user-facing error message is printed and the program exits with a nonzero status.
+
+### Exception Flow
+
+For example, a malformed log line follows this path:
+
+1. `Parser.parse()` attempts to parse the line.
+2. If the line is malformed, `Parser` throws `MalformedLineException`.
+3. The exception contains the original line number and raw line content.
+4. `LogReader` catches `MalformedLineException` and records the malformed line.
+5. Processing continues instead of terminating the entire analysis.
+6. `ReportWriter` includes the malformed line in the final report.
+
+For an unrecoverable file failure, the flow is different:
+
+1. A file operation fails while reading the log, reading the rulebook, or writing the report.
+2. The original `IOException` is wrapped in `TraceFinderFileException`.
+3. The original exception is preserved as the cause.
+4. The exception propagates through `Main.run()`.
+5. `Main.main()` catches the specific exception and prints a user-facing error containing the affected file and reason.
+6. The program exits with a nonzero status.
+
+This convention keeps low-level failures separate from user-facing error handling while ensuring that failures are never silently ignored.
+
+### Exception Handling Tests
+
+The test suite verifies:
+
+- Invalid command-line arguments.
+- Missing log files.
+- Invalid rulebooks.
+- Unwritable report paths.
+- Malformed lines carrying their line number and original content.
+- Preservation of the original cause when file-reading exceptions are wrapped.
+- Preservation of the original timestamp parsing exception when it is wrapped in `MalformedLineException`.
+- Recoverable malformed-line handling while still producing a report.
+- Unrecoverable failures being represented by their specific exception types.
+
+The existing analysis and time-window tests remain part of the test suite so that the exception-handling refactor does not weaken previous behaviour.
