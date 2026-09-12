@@ -10,6 +10,7 @@ public class MainTest {
     @Test
     void mainRejectsWrongNumberOfArguments()
             throws TraceFinderArgumentException {
+
         assertThrows(
                 TraceFinderArgumentException.class,
                 () -> Main.run(new String[]{"logs.txt"})
@@ -19,6 +20,7 @@ public class MainTest {
     @Test
     void mainRejectsTooManyArguments()
             throws TraceFinderArgumentException {
+
         assertThrows(
                 TraceFinderArgumentException.class,
                 () -> Main.run(
@@ -35,6 +37,7 @@ public class MainTest {
     @Test
     void mainRejectsUnreadableTimestamp()
             throws TraceFinderArgumentException {
+
         assertThrows(
                 TraceFinderArgumentException.class,
                 () -> Main.run(
@@ -52,6 +55,7 @@ public class MainTest {
     @Test
     void mainRejectsReversedTimeWindow()
             throws TraceFinderArgumentException {
+
         assertThrows(
                 TraceFinderArgumentException.class,
                 () -> Main.run(
@@ -158,5 +162,41 @@ public class MainTest {
         Files.deleteIfExists(logs);
         Files.deleteIfExists(rules);
         Files.deleteIfExists(report);
+    }
+
+    @Test
+    void unwritableReportPathProducesFileException()
+            throws Exception {
+
+        Path logs = Files.createTempFile("logs", ".txt");
+        Path rules = Files.createTempFile("rules", ".csv");
+        Path reportDirectory =
+                Files.createTempDirectory("report-directory");
+
+        Files.writeString(
+                logs,
+                "2024-03-15 02:00:00 | INFO | 192.168.1.10 | /home | view\n"
+        );
+
+        Files.writeString(
+                rules,
+                "level,severity_score\n" +
+                "INFO,1\n"
+        );
+
+        assertThrows(
+                TraceFinderFileException.class,
+                () -> Main.run(
+                        new String[]{
+                                logs.toString(),
+                                rules.toString(),
+                                reportDirectory.toString()
+                        }
+                )
+        );
+
+        Files.deleteIfExists(logs);
+        Files.deleteIfExists(rules);
+        Files.deleteIfExists(reportDirectory);
     }
 }
