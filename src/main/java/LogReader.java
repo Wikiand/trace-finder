@@ -13,7 +13,7 @@ public class LogReader {
         this.parser = parser;
     }
 
-    public LogReadResult read(Path path) throws IOException {
+    public LogReadResult read(Path path) throws TraceFinderFileException {
 
         List<LogEntry> entries = new ArrayList<>();
         List<MalformedLine> malformedLines = new ArrayList<>();
@@ -27,8 +27,7 @@ public class LogReader {
 
                 lineNumber++;
 
-                ParseResult result =
-                        parser.parse(line, lineNumber);
+                ParseResult result = parser.parse(line, lineNumber);
 
                 if (result.isValid()) {
                     entries.add(result.getEntry());
@@ -36,6 +35,12 @@ public class LogReader {
                     malformedLines.add(result.getMalformedLine());
                 }
             }
+
+        } catch (IOException e) {
+            throw new TraceFinderFileException(
+                    "Could not read log file '" + path + "': " + e.getMessage(),
+                    e
+            );
         }
 
         return new LogReadResult(entries, malformedLines);
