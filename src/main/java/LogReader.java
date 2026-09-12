@@ -27,12 +27,20 @@ public class LogReader {
 
                 lineNumber++;
 
-                ParseResult result = parser.parse(line, lineNumber);
+                try {
+                    ParseResult result = parser.parse(line, lineNumber);
 
-                if (result.isValid()) {
-                    entries.add(result.getEntry());
-                } else {
-                    malformedLines.add(result.getMalformedLine());
+                    if (result.isValid()) {
+                        entries.add(result.getEntry());
+                    }
+
+                } catch (MalformedLineException e) {
+                    malformedLines.add(
+                            new MalformedLine(
+                                    e.getLineNumber(),
+                                    e.getRawContent()
+                            )
+                    );
                 }
             }
 

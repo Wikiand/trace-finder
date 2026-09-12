@@ -7,25 +7,31 @@ public class Parser {
     private static final DateTimeFormatter TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public ParseResult parse(String line, int lineNumber) {
+    public ParseResult parse(String line, int lineNumber)
+            throws MalformedLineException {
 
         if (line == null || line.trim().isEmpty()) {
-            return ParseResult.malformed(
-                    new MalformedLine(lineNumber, line)
+            throw new MalformedLineException(
+                    lineNumber,
+                    line
             );
         }
 
         String[] fields = line.split("\\|", -1);
 
         if (fields.length != 5) {
-            return ParseResult.malformed(
-                    new MalformedLine(lineNumber, line)
+            throw new MalformedLineException(
+                    lineNumber,
+                    line
             );
         }
 
         try {
             LocalDateTime timestamp =
-                    LocalDateTime.parse(fields[0].trim(), TIMESTAMP_FORMAT);
+                    LocalDateTime.parse(
+                            fields[0].trim(),
+                            TIMESTAMP_FORMAT
+                    );
 
             LogEntry entry = new LogEntry(
                     lineNumber,
@@ -40,8 +46,9 @@ public class Parser {
             return ParseResult.success(entry);
 
         } catch (DateTimeParseException e) {
-            return ParseResult.malformed(
-                    new MalformedLine(lineNumber, line)
+            throw new MalformedLineException(
+                    lineNumber,
+                    line
             );
         }
     }
