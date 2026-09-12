@@ -98,7 +98,7 @@ java -cp target/classes Main logs.txt rules.csv report.txt
 mvn test
 ```
 
-The current test suite contains **22 tests**, all of which pass successfully.
+The current test suite contains **27 tests**, all of which pass successfully.
 
 ## Screenshots
 
