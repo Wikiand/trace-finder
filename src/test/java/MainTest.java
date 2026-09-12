@@ -1,53 +1,162 @@
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MainTest {
 
     @Test
-    void mainRejectsWrongNumberOfArguments() {
-        int exitCode = Main.run(new String[]{"logs.txt"});
-
-        assertEquals(1, exitCode);
+    void mainRejectsWrongNumberOfArguments()
+            throws TraceFinderArgumentException {
+        assertThrows(
+                TraceFinderArgumentException.class,
+                () -> Main.run(new String[]{"logs.txt"})
+        );
     }
 
     @Test
-    void mainRejectsTooManyArguments() {
-        int exitCode = Main.run(
-                new String[]{"logs.txt", "rules.csv", "report.txt", "extra.txt"}
+    void mainRejectsTooManyArguments()
+            throws TraceFinderArgumentException {
+        assertThrows(
+                TraceFinderArgumentException.class,
+                () -> Main.run(
+                        new String[]{
+                                "logs.txt",
+                                "rules.csv",
+                                "report.txt",
+                                "extra.txt"
+                        }
+                )
+        );
+    }
+
+    @Test
+    void mainRejectsUnreadableTimestamp()
+            throws TraceFinderArgumentException {
+        assertThrows(
+                TraceFinderArgumentException.class,
+                () -> Main.run(
+                        new String[]{
+                                "logs.txt",
+                                "rules.csv",
+                                "report.txt",
+                                "not-a-timestamp",
+                                "2024-03-15 03:00:00"
+                        }
+                )
+        );
+    }
+
+    @Test
+    void mainRejectsReversedTimeWindow()
+            throws TraceFinderArgumentException {
+        assertThrows(
+                TraceFinderArgumentException.class,
+                () -> Main.run(
+                        new String[]{
+                                "logs.txt",
+                                "rules.csv",
+                                "report.txt",
+                                "2024-03-15 04:00:00",
+                                "2024-03-15 03:00:00"
+                        }
+                )
+        );
+    }
+
+    @Test
+    void malformedLinesRemainInReport()
+            throws Exception {
+
+        Path logs = Files.createTempFile("logs", ".txt");
+        Path rules = Files.createTempFile("rules", ".csv");
+        Path report = Files.createTempFile("report", ".txt");
+
+        Files.writeString(
+                logs,
+                "2024-03-15 02:00:00 | INFO | 192.168.1.10 | /home | view\n" +
+                "this is malformed\n"
         );
 
-        assertEquals(1, exitCode);
-    }
+        Files.writeString(
+                rules,
+                "level,severity_score\n" +
+                "INFO,1\n"
+        );
 
-    @Test
-    void mainRejectsUnreadableTimestamp() {
         int exitCode = Main.run(
                 new String[]{
-                        "logs.txt",
-                        "rules.csv",
-                        "report.txt",
-                        "not-a-timestamp",
-                        "2024-03-15 03:00:00"
+                        logs.toString(),
+                        rules.toString(),
+                        report.toString(),
+                        "2024-03-15 03:00:00",
+                        "2024-03-15 04:00:00"
                 }
         );
 
-        assertEquals(1, exitCode);
+        assertEquals(0, exitCode);
+
+        String reportContent = Files.readString(report);
+
+        assertTrue(reportContent.contains("Malformed Lines"));
+        assertTrue(reportContent.contains("Line 2: this is malformed"));
+
+        Files.deleteIfExists(logs);
+        Files.deleteIfExists(rules);
+        Files.deleteIfExists(report);
     }
 
     @Test
-    void mainRejectsReversedTimeWindow() {
-        int exitCode = Main.run(
-                new String[]{
-                        "logs.txt",
-                        "rules.csv",
-                        "report.txt",
-                        "2024-03-15 04:00:00",
-                        "2024-03-15 03:00:00"
-                }
-        );
+    void missingLogFileProducesFileException() {
 
-        assertEquals(1, exitCode);
+        Path rules = Path.of("test-data/rules.csv");
+        Path report = Path.of("target/test-report.txt");
+
+        assertThrows(
+                TraceFinderFileException.class,
+                () -> Main.run(
+                        new String[]{
+                                "does-not-exist.log",
+                                rules.toString(),
+                                report.toString()
+                        }
+                )
+        );
     }
 
+    @Test
+    void invalidRulebookProducesRulebookException()
+            throws Exception {
+
+        Path logs = Files.createTempFile("logs", ".txt");
+        Path rules = Files.createTempFile("rules", ".csv");
+        Path report = Files.createTempFile("report", ".txt");
+
+        Files.writeString(
+                logs,
+                "2024-03-15 02:00:00 | INFO | 192.168.1.10 | /home | view\n"
+        );
+
+        Files.writeString(
+                rules,
+                "invalid,header\n"
+        );
+
+        assertThrows(
+                RulebookException.class,
+                () -> Main.run(
+                        new String[]{
+                                logs.toString(),
+                                rules.toString(),
+                                report.toString()
+                        }
+                )
+        );
+
+        Files.deleteIfExists(logs);
+        Files.deleteIfExists(rules);
+        Files.deleteIfExists(report);
+    }
 }
