@@ -233,15 +233,19 @@ The existing analysis and time-window tests remain part of the test suite so tha
 
 ### Exception Handling Demonstrations
 
-#### 1. Recoverable failure — malformed log lines
+#### 1. Unrecoverable Failure — Missing Rulebook
 
-![Malformed lines recorded in report](screenshots/02-malformed-lines.png)
+![Missing rulebook error](screenshots/01-missing-rulebook.png)
 
-#### 2. Deep file failure
+#### 2. Recoverable Failure — Malformed Log Lines
 
-![Deep file failure names source file](screenshots/03-deep-file-failure.png)
+![Malformed log lines recorded in report](screenshots/02-malformed-lines.png)
 
-#### 3. Test suite passing
+#### 3. Deep File Failure — Source File Identified
+
+![Deep file failure identifying the affected file](screenshots/03-deep-file-failure.png)
+
+#### 4. Test Suite Passing — 27 Tests
 
 ![27 tests passing](screenshots/04-tests-passing.png)
 
