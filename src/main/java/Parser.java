@@ -26,10 +26,25 @@ public class Parser {
             );
         }
 
+        String timestampField =
+                InputCleaner.clean(fields[0]);
+
+        String level =
+                InputCleaner.clean(fields[1]);
+
+        String sourceIp =
+                InputCleaner.clean(fields[2]);
+
+        String target =
+                InputCleaner.clean(fields[3]);
+
+        String action =
+                InputCleaner.clean(fields[4]);
+
         try {
             LocalDateTime timestamp =
                     LocalDateTime.parse(
-                            fields[0].trim(),
+                            timestampField,
                             TIMESTAMP_FORMAT
                     );
 
@@ -37,10 +52,10 @@ public class Parser {
                     lineNumber,
                     line,
                     timestamp,
-                    fields[1].trim(),
-                    fields[2].trim(),
-                    fields[3].trim(),
-                    fields[4].trim()
+                    level,
+                    sourceIp,
+                    target,
+                    action
             );
 
             return ParseResult.success(entry);

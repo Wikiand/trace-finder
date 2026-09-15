@@ -11,6 +11,7 @@ public class AnalyzerTest {
 
     @Test
     void activitySummaryCountsKnownLevels() {
+
         Rulebook rulebook = new Rulebook();
 
         rulebook.addRule("INFO", 1);
@@ -55,15 +56,28 @@ public class AnalyzerTest {
                 rulebook
         );
 
-        Map<String, Integer> summary = result.getActivitySummary();
+        Map<String, Integer> summary =
+                result.getActivitySummary();
 
-        assertEquals(1, summary.get("INFO"));
-        assertEquals(1, summary.get("WARN"));
-        assertEquals(1, summary.get("ERROR"));
+        assertEquals(
+                1,
+                summary.get("INFO")
+        );
+
+        assertEquals(
+                1,
+                summary.get("WARN")
+        );
+
+        assertEquals(
+                1,
+                summary.get("ERROR")
+        );
     }
 
     @Test
     void severityThreeOrHigherIsFlagged() {
+
         Rulebook rulebook = new Rulebook();
 
         rulebook.addRule("INFO", 1);
@@ -98,12 +112,22 @@ public class AnalyzerTest {
                 rulebook
         );
 
-        assertEquals(1, result.getFlaggedEntries().size());
-        assertEquals("WARN", result.getFlaggedEntries().get(0).getLevel());
+        assertEquals(
+                1,
+                result.getFlaggedEntries().size()
+        );
+
+        assertEquals(
+                "WARN",
+                result.getFlaggedEntries()
+                        .get(0)
+                        .getLevel()
+        );
     }
 
     @Test
     void unknownLevelIsRecordedAsUnknownPattern() {
+
         Rulebook rulebook = new Rulebook();
 
         rulebook.addRule("INFO", 1);
@@ -126,15 +150,59 @@ public class AnalyzerTest {
                 rulebook
         );
 
-        assertEquals(1, result.getUnknownPatterns().size());
+        assertEquals(
+                1,
+                result.getUnknownPatterns().size()
+        );
+
         assertEquals(
                 "DEBUG",
-                result.getUnknownPatterns().get(0).getLevel()
+                result.getUnknownPatterns()
+                        .get(0)
+                        .getLevel()
+        );
+    }
+
+    @Test
+    void unknownPatternPreservesOriginalLineNumber() {
+
+        Rulebook rulebook = new Rulebook();
+
+        rulebook.addRule("INFO", 1);
+
+        LogEntry unknown = new LogEntry(
+                5,
+                "2024-03-15 02:14:33 | DEBUG | 192.168.1.10 | /home | view",
+                LocalDateTime.of(2024, 3, 15, 2, 14, 33),
+                "DEBUG",
+                "192.168.1.10",
+                "/home",
+                "view"
+        );
+
+        Analyzer analyzer = new Analyzer();
+
+        AnalysisResult result = analyzer.analyze(
+                Arrays.asList(unknown),
+                rulebook
+        );
+
+        assertEquals(
+                1,
+                result.getUnknownPatterns().size()
+        );
+
+        assertEquals(
+                5,
+                result.getUnknownPatterns()
+                        .get(0)
+                        .getLineNumber()
         );
     }
 
     @Test
     void suspiciousIpCountsAllEntriesFromFlaggedIp() {
+
         Rulebook rulebook = new Rulebook();
 
         rulebook.addRule("INFO", 1);
@@ -180,13 +248,16 @@ public class AnalyzerTest {
 
         assertEquals(
                 3,
-                result.getSuspiciousIps().get("192.168.1.10")
+                result.getSuspiciousIps()
+                        .get("192.168.1.10")
         );
     }
 
     @Test
     void timeWindowIncludesStartAndExcludesEnd() {
+
         Rulebook rulebook = new Rulebook();
+
         rulebook.addRule("INFO", 1);
 
         LogEntry atStart = new LogEntry(
@@ -221,20 +292,52 @@ public class AnalyzerTest {
 
         Analyzer analyzer = new Analyzer();
 
-        List<LogEntry> filtered = analyzer.filterByTimeWindow(
-                Arrays.asList(atStart, inside, atEnd),
-                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
-                LocalDateTime.of(2024, 3, 15, 3, 0, 0)
+        List<LogEntry> filtered =
+                analyzer.filterByTimeWindow(
+                        Arrays.asList(
+                                atStart,
+                                inside,
+                                atEnd
+                        ),
+                        LocalDateTime.of(
+                                2024,
+                                3,
+                                15,
+                                2,
+                                0,
+                                0
+                        ),
+                        LocalDateTime.of(
+                                2024,
+                                3,
+                                15,
+                                3,
+                                0,
+                                0
+                        )
+                );
+
+        assertEquals(
+                2,
+                filtered.size()
         );
 
-        assertEquals(2, filtered.size());
-        assertEquals(1, filtered.get(0).getLineNumber());
-        assertEquals(2, filtered.get(1).getLineNumber());
+        assertEquals(
+                1,
+                filtered.get(0).getLineNumber()
+        );
+
+        assertEquals(
+                2,
+                filtered.get(1).getLineNumber()
+        );
     }
 
     @Test
     void equalTimeWindowContainsNoEntries() {
+
         Rulebook rulebook = new Rulebook();
+
         rulebook.addRule("INFO", 1);
 
         LogEntry entry = new LogEntry(
@@ -249,16 +352,112 @@ public class AnalyzerTest {
 
         Analyzer analyzer = new Analyzer();
 
-        AnalysisResult result = analyzer.analyze(
-                Arrays.asList(entry),
-                rulebook,
-                LocalDateTime.of(2024, 3, 15, 2, 0, 0),
-                LocalDateTime.of(2024, 3, 15, 2, 0, 0)
+        AnalysisResult result =
+                analyzer.analyze(
+                        Arrays.asList(entry),
+                        rulebook,
+                        LocalDateTime.of(
+                                2024,
+                                3,
+                                15,
+                                2,
+                                0,
+                                0
+                        ),
+                        LocalDateTime.of(
+                                2024,
+                                3,
+                                15,
+                                2,
+                                0,
+                                0
+                        )
+                );
+
+        assertEquals(
+                0,
+                result.getActivitySummary()
+                        .getOrDefault("INFO", 0)
         );
 
-        assertEquals(0, result.getActivitySummary().getOrDefault("INFO", 0));
-        assertTrue(result.getFlaggedEntries().isEmpty());
-        assertTrue(result.getSuspiciousIps().isEmpty());
-        assertTrue(result.getUnknownPatterns().isEmpty());
+        assertTrue(
+                result.getFlaggedEntries().isEmpty()
+        );
+
+        assertTrue(
+                result.getSuspiciousIps().isEmpty()
+        );
+
+        assertTrue(
+                result.getUnknownPatterns().isEmpty()
+        );
+    }
+
+    @Test
+    void cleanedFieldsAreUsedForRulebookMatchingAndIpGrouping() {
+
+        Rulebook rulebook = new Rulebook();
+
+        rulebook.addRule("INFO", 1);
+        rulebook.addRule("WARN", 3);
+
+        LogEntry normal = new LogEntry(
+                1,
+                "2024-03-15 02:14:33 | INFO | 192.168.1.10 | /home | view",
+                LocalDateTime.of(2024, 3, 15, 2, 14, 33),
+                "INFO",
+                "192.168.1.10",
+                "/home",
+                "view"
+        );
+
+        LogEntry flagged = new LogEntry(
+                2,
+                "2024-03-15 02:15:33 | W\u200BARN | 192.168.1.10 | /login | failed",
+                LocalDateTime.of(2024, 3, 15, 2, 15, 33),
+                "WARN",
+                "192.168.1.10",
+                "/login",
+                "failed"
+        );
+
+        Analyzer analyzer = new Analyzer();
+
+        AnalysisResult result =
+                analyzer.analyze(
+                        Arrays.asList(
+                                normal,
+                                flagged
+                        ),
+                        rulebook
+                );
+
+        assertEquals(
+                1,
+                result.getActivitySummary()
+                        .get("WARN")
+        );
+
+        assertEquals(
+                1,
+                result.getFlaggedEntries().size()
+        );
+
+        assertEquals(
+                "WARN",
+                result.getFlaggedEntries()
+                        .get(0)
+                        .getLevel()
+        );
+
+        assertEquals(
+                2,
+                result.getSuspiciousIps()
+                        .get("192.168.1.10")
+        );
+
+        assertTrue(
+                result.getUnknownPatterns().isEmpty()
+        );
     }
 }
