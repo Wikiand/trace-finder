@@ -41,6 +41,155 @@ Entries with a severity score of **3 or higher** are flagged.
 
 Unknown activity levels are reported separately, while malformed log lines are recorded with their line numbers and original content.
 
+## Input Security and Validation
+
+TraceFinder treats the log and rulebook as untrusted input. Input validation is performed before and during processing so that oversized, malformed, or incorrectly encoded files cannot quietly produce an incorrect report.
+
+### Input Limits
+
+All input limits are centralized in `src/main/java/InputLimits.java`:
+
+| Input | Limit | Unit | Behaviour above limit |
+|---|---:|---|---|
+| Log file | 10 MiB | bytes | Refused before content is read |
+| Rulebook file | 1 MiB | bytes | Refused before content is read |
+| Single log line | 8,192 | characters | Recorded as malformed and processing continues |
+
+The file-size limits are measured in bytes. The line limit is measured in characters.
+
+A file exactly at its configured size limit is accepted. A file above the limit is rejected before its content is read. Error messages include the affected file, the configured limit, and the actual size.
+
+### Incremental Log Processing
+
+TraceFinder does not load the entire raw log file into memory.
+
+The log reader processes input incrementally:
+
+1. The file size is checked before reading.
+2. UTF-8 is decoded using a strict decoder.
+3. One line is processed at a time.
+4. A bounded line reader stores at most 8,192 characters from an individual line.
+5. If a line exceeds the limit, the remaining characters are consumed without storing the complete line.
+6. The line is recorded as malformed and processing continues with the next line.
+
+This keeps memory usage bounded with respect to the raw input line. Parsed entries and report data are still stored because they are required for analysis and reporting.
+### Overlong Lines
+
+A log line longer than 8,192 characters is considered malformed.
+
+TraceFinder does not store the complete hostile line. Instead, the report records:
+
+[line exceeded maximum length of 8192 characters]
+
+along with the original line number.
+
+Processing continues after the overlong line. The complete original content is intentionally not preserved because doing so would defeat the purpose of the line-length limit.
+
+### Strict UTF-8 Validation
+
+Both input files must contain valid UTF-8.
+
+TraceFinder uses a strict UTF-8 decoder that reports malformed or unmappable byte sequences while the files are being read. There is no separate full-file validation pass.
+
+Invalid UTF-8 is an unrecoverable input failure. Processing stops and no report is produced for that run.
+
+Invalid UTF-8 is also detected after the stored portion of an overlong line because the complete line is consumed through the decoder.
+
+### Log Field Validation and Cleaning
+
+Every valid log record must contain exactly five fields separated by `|`:
+
+timestamp | level | source IP | target | action
+
+An additional `|` therefore makes the record malformed.
+
+Before fields are compared, grouped, or matched against the rulebook, TraceFinder removes leading/trailing whitespace and hidden characters such as zero-width characters and ASCII control characters.
+
+Cleaned values are used for:
+
+- Rulebook matching
+- Activity grouping
+- IP grouping
+- Counting
+
+The original log line is retained separately.
+
+Therefore:
+
+- **Activity Summary** uses the cleaned rulebook level.
+- **Suspicious Activity by IP** uses the cleaned IP.
+- **Flagged Entries** preserve the original log content.
+- **Unknown Patterns** preserve the original log content.
+- **Malformed Lines** preserve the original log content.
+- **Overlong Lines** use the shortened explanatory form above.
+### Rulebook Validation
+
+The rulebook must:
+
+- contain the exact required header `level,severity_score`;
+- contain exactly two columns per non-empty record;
+- contain a non-empty level;
+- contain unique levels after cleaning;
+- contain a non-negative whole-number severity score.
+
+Values such as `-1`, `2.5`, or other non-integer scores are rejected.
+
+Duplicate levels are checked after cleaning. For example, `INFO` and `I​NFO` are considered duplicates because the zero-width character is removed.
+
+Rulebook validation failures are unrecoverable and identify the affected file and, where applicable, the line number.
+
+### Regular File Validation
+
+The log and rulebook paths must refer to regular files. Directories and other filesystem objects are rejected.
+
+### Hostile Input Fixtures
+
+Security-focused hostile inputs are stored under `test-data/hostile/`.
+
+| Fixture | Attack being tested | Expected result |
+|---|---|---|
+| `oversized-log.log` | Log exceeds 10 MiB | Refused before reading content |
+| `oversized-rulebook.csv` | Rulebook exceeds 1 MiB | Refused before reading content |
+| `overlong-line.log` | 8,193-character log line | Recorded as malformed; processing continues |
+| `multiple-delimiters.log` | More than five log fields | Malformed line |
+| `invalid-utf8.log` | Invalid UTF-8 bytes | Run stops; no report is produced |
+| `hidden-characters.log` | Zero-width character inside a level | Character is removed and matching succeeds |
+| `duplicate-cleaned-levels.csv` | Duplicate levels after cleaning | Rulebook rejected |
+| `negative-score.csv` | Negative severity score | Rulebook rejected |
+| `decimal-score.csv` | Decimal severity score | Rulebook rejected |
+
+### Hostile Input Detection and Limitations
+
+Some hostile input is detectable because it violates a defined structural or encoding rule. Examples include invalid UTF-8, oversized files, overlong lines, incorrect field counts, invalid timestamps, and invalid rulebook scores.
+
+Some input is intentionally normalized rather than rejected. For example, a zero-width character inside `I​NFO` is removed so that it matches `INFO`. This is an intentional correctness rule.
+
+The combination of size checks, strict UTF-8 decoding, exact field counts, timestamp validation, rulebook validation, cleaned matching, and explicit malformed-line handling prevents malformed input from quietly becoming an incorrect analysis result.
+
+### Untrusted Report Content
+
+The generated report contains values originating from the input files. Treat these values as untrusted data.
+
+Open generated reports in a plain-text editor rather than an application that interprets formulas, markup, or other active content.
+
+### Security Tests
+
+The test suite verifies:
+
+- Exact and above-limit log-file sizes.
+- Exact and above-limit rulebook sizes.
+- Exact and above-limit log-line lengths.
+- Continued processing after overlong lines.
+- Invalid UTF-8 rejection, including invalid UTF-8 after an overlong line.
+- Valid UTF-8 containing non-ASCII characters.
+- Multiple-delimiter rejection.
+- Hidden-character cleaning.
+- Duplicate cleaned rulebook levels.
+- Negative and decimal severity scores.
+- Empty rulebook levels.
+- Regular-file validation.
+- Integration behavior ensuring unrecoverable input failures prevent report generation.
+
 ## Report
 
 The generated report contains five sections:
@@ -98,7 +247,7 @@ java -cp target/classes Main logs.txt rules.csv report.txt
 mvn test
 ```
 
-The current test suite contains **27 tests**, all of which pass successfully.
+The current test suite contains **64 tests**, all of which pass successfully.
 
 ## Screenshots
 
@@ -245,7 +394,7 @@ The existing analysis and time-window tests remain part of the test suite so tha
 
 ![Deep file failure identifying the affected file](screenshots/03-deep-file-failure.png)
 
-#### 4. Test Suite Passing — 27 Tests
+#### 4. Historical Test Suite Screenshot — 27 Tests
 
 ![27 tests passing](screenshots/04-tests-passing.png)
 
